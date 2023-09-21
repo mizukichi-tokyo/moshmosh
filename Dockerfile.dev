@@ -1,0 +1,4 @@
+# Dockerfile.dev
+FROM node:18.18.0
+WORKDIR /app
+CMD ["tail", "-f", "/dev/null"]
