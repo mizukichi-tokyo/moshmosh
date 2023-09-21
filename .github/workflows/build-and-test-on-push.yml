@@ -3,15 +3,33 @@ on:
     branches-ignore:
       - "main"
 name: Build and Test on Push
+
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Docker Build
-        run: docker build -f Dockerfile.dev .
-  run-tests:
+      - name: Calculate cache key
+        id: cache-key
+        run: echo "::set-output name=key::${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}"
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: moshmosh/node_modules
+          key: ${{ steps.cache-key.outputs.key }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: moshmosh
+
+  run-lint:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,26 +38,35 @@ jobs:
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install Dependencies
-        run: yarn install
-        working-directory: moshmosh
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Run lint
         run: yarn lint
         working-directory: moshmosh
-      - name: Run Prettier # prettier自体を実行
+
+  run-prettier:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Prettier
         run: |
           npm ci
-          npx prettier --write ${{ env.GIT_DIFF_FILTERED }} # 環境変数GIT_DIFF_FILTEREDに差分のあるファイルが列挙されている
+          npx prettier --check ${{ env.GIT_DIFF_FILTERED }}
         if: env.GIT_DIFF
         working-directory: moshmosh
-      - uses: stefanzweifel/git-auto-commit-action@v4 # フォーマットしたファイルをコミット
+
+  run-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
         with:
-          commit_message: Apply Prettier Change
+          path: moshmosh/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Run test
         run: yarn run test
         working-directory: moshmosh
