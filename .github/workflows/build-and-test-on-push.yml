@@ -4,9 +4,6 @@ on:
       - "main"
 name: Build and Test on Push
 
-env:
-  CACHE_KEY_FILE: cache-key.txt
-
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -17,8 +14,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Calculate cache key
         id: cache-key
-        run: |
-          echo "${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}" > ${{ env.CACHE_KEY_FILE }}
+        run: echo "::set-output name=key::${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}"
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
