@@ -39,6 +39,9 @@ jobs:
         with:
           path: moshmosh/node_modules
           key: ${{ needs.setup.outputs.cache-key }}
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: moshmosh
       - name: Run lint
         run: yarn lint
         working-directory: moshmosh
@@ -67,6 +70,9 @@ jobs:
         with:
           path: moshmosh/node_modules
           key: ${{ needs.setup.outputs.cache-key }}
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: moshmosh
       - name: Run test
         run: yarn run test
         working-directory: moshmosh
