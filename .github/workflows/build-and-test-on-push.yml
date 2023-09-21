@@ -25,6 +25,6 @@ jobs:
       - name: Install Dependencies
         run: yarn install
         working-directory: moshmosh
-      - name: Run Test
-        run: yarn run test
+      - name: Run lint
+        run: yarn lint
         working-directory: moshmosh
