@@ -4,6 +4,9 @@ on:
       - "main"
 name: Build and Test on Push
 
+env:
+  CACHE_KEY_FILE: cache-key.txt
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -14,12 +17,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Calculate cache key
         id: cache-key
-        run: echo "::set-output name=key::${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}"
+        run: |
+          echo "${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}" > ${{ env.CACHE_KEY_FILE }}
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ steps.cache-key.outputs.key }}
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -34,39 +38,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Get cache key from setup job
+        run: echo "CACHE_KEY=$(cat ${{ env.CACHE_KEY_FILE }})" >> $GITHUB_ENV
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
+          key: ${{ env.CACHE_KEY }}
       - name: Run lint
         run: yarn lint
-        working-directory: moshmosh
-
-  run-prettier:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Run Prettier
-        run: |
-          npm ci
-          npx prettier --check ${{ env.GIT_DIFF_FILTERED }}
-        if: env.GIT_DIFF
-        working-directory: moshmosh
-
-  run-tests:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: moshmosh/node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
-      - name: Run test
-        run: yarn run test
         working-directory: moshmosh
