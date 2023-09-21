@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
+          key: ${{ steps.cache-key.outputs.key }}
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -38,13 +38,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Get cache key from setup job
-        run: echo "CACHE_KEY=$(cat ${{ env.CACHE_KEY_FILE }})" >> $GITHUB_ENV
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ env.CACHE_KEY }}
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Run lint
         run: yarn lint
+        working-directory: moshmosh
+
+  run-prettier:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Prettier
+        run: |
+          npm ci
+          npx prettier --check ${{ env.GIT_DIFF_FILTERED }}
+        if: env.GIT_DIFF
+        working-directory: moshmosh
+
+  run-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: moshmosh/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+      - name: Run test
+        run: yarn run test
         working-directory: moshmosh
