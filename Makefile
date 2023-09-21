@@ -1,6 +1,6 @@
 up:
-	docker-compose up -d
+	docker-compose -f compose.dev.yaml up -d
 down:
-	docker-compose down
+	docker-compose -f compose.dev.yaml down
 sh:
-	docker-compose exec web sh
+	docker-compose exec web-dev sh
