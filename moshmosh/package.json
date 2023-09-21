@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
-    "format": "prettier --write './src/**/*.{js,ts,jsx,tsx}'"
+    "test": "jest"
   },
   "dependencies": {
     "@types/node": "20.6.3",
