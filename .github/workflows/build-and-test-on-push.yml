@@ -7,14 +7,19 @@ name: Build and Test on Push
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Calculate cache key
+        id: cache-key
+        run: echo "::set-output name=key::${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}"
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: moshmosh/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}
+          key: ${{ steps.cache-key.outputs.key }}
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -22,8 +27,6 @@ jobs:
       - name: Install Dependencies
         run: yarn install
         working-directory: moshmosh
-    outputs:
-      cache-key: ${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}
 
   run-lint:
     needs: setup
