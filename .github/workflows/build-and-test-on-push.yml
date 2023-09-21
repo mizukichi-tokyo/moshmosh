@@ -31,14 +31,12 @@ jobs:
       - name: Run lint
         run: yarn lint
         working-directory: moshmosh
-      - name: Run format
-        run: yarn format
-        working-directory: moshmosh
       - name: Run Prettier # prettier自体を実行
         run: |
           npm ci
           npx prettier --write ${{ env.GIT_DIFF_FILTERED }} # 環境変数GIT_DIFF_FILTEREDに差分のあるファイルが列挙されている
         if: env.GIT_DIFF
+        working-directory: moshmosh
       - uses: stefanzweifel/git-auto-commit-action@v4 # フォーマットしたファイルをコミット
         with:
           commit_message: Apply Prettier Change
