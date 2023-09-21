@@ -3,15 +3,9 @@ on:
     branches-ignore:
       - "main"
 name: Build and Test on Push
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Docker Build
-        run: docker build -f Dockerfile.dev .
-  run-tests:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,15 +22,48 @@ jobs:
       - name: Install Dependencies
         run: yarn install
         working-directory: moshmosh
+    outputs:
+      cache-key: ${{ runner.os }}-yarn-${{ hashFiles('moshmosh/package.json', 'moshmosh/yarn.lock') }}
+
+  run-lint:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: moshmosh/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Run lint
         run: yarn lint
         working-directory: moshmosh
+
+  run-prettier:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Run Prettier
         run: |
           npm ci
           npx prettier --check ${{ env.GIT_DIFF_FILTERED }}
         if: env.GIT_DIFF
         working-directory: moshmosh
+
+  run-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: moshmosh/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
       - name: Run test
         run: yarn run test
         working-directory: moshmosh
